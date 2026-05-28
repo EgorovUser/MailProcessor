@@ -1,0 +1,115 @@
+{
+  /* ============================================================
+   * MailProcessor — Конфигурация
+   * Все настройки вынесены сюда, код править не нужно.
+   * ============================================================ */
+
+  // === IMAP-подключение ===
+  "imap": {
+    // Адрес IMAP-сервера
+    "server": "imap.yandex.ru",
+
+    // Имя цели в Windows Credential Manager, где хранятся логин/пароль
+    "credentialTarget": "YandexMail",
+
+    // Порт (0 = авто-подбор, или укажите явно: 993 для SSL, 143 для STARTTLS)
+    "port": 0,
+
+    // SSL-режим: "SslOnConnect", "StartTls", "None", "Auto"
+    // "Auto" — программа сама переберёт варианты
+    "sslOption": "Auto"
+  },
+
+  // === Обработка писем ===
+  "processing": {
+    // Помечать ли письма как прочитанные после обработки
+    "markAsRead": true,
+
+    // Сколько последних дней просматривать (0 = все непрочитанные, без ограничения по дате)
+    "daysToSearch": 7,
+
+    // Максимум писем за один запуск (0 = без лимита)
+    "maxEmailsPerRun": 0,
+
+    // Папка для сохранения результатов
+    "outputFolder": "C:\\Output\\MailProcessor",
+
+    // Создавать подпапку с датой запуска (формат: yyyy-MM-dd_HH-mm-ss)
+    "useDateSubfolder": false
+  },
+
+  // === Скачивание вложений ===
+  "attachments": {
+    // Включено ли скачивание вложений
+    "enabled": true,
+
+    // Расширения файлов, которые нужно скачивать (без учёта регистра)
+    "extensions": [ ".pdf", ".xls", ".xlsx" ],
+
+    // Подпапка внутри outputFolder для вложений
+    "subfolder": "attachments",
+
+    // Добавлять ли UID письма к имени файла
+    "prefixWithUid": true
+  },
+
+  // === Парсинг HTML-таблиц из тела письма ===
+  "tableParsing": {
+    // Включён ли парсинг таблиц (fallback, если нет подходящих вложений)
+    "enabled": true,
+
+    // Подпапка внутри outputFolder для распарсенных CSV
+    "subfolder": "parsed",
+
+    // Если ни одно правило не подошло — парсить ли все найденные таблицы
+    "parseAllTablesIfNoMatch": false,
+
+    // Правила парсинга таблиц (можно добавить сколько угодно)
+    "rules": [
+      {
+        // Человекочитаемое имя правила
+        "name": "TransferDetails",
+
+        // Текст, по которому ищется нужная таблица в первой строке
+        "tableIdentifier": "Сведения о переводе",
+
+        // Режим поиска: "contains" | "startsWith" | "exact" | "regex"
+        "matchMode": "contains",
+
+        // Где искать: "firstRow" — первая строка таблицы, "anyRow" — любая строка
+        "searchScope": "firstRow",
+
+        // Сколько строк пропустить сверху (0 = не пропускать)
+        "skipFirstRows": 1,
+
+        // Сколько строк пропустить снизу (0 = не пропускать)
+        "skipLastRows": 1,
+
+        // Включать ли строку-заголовок (после skipFirstRows) в результат
+        "includeHeader": false,
+
+        // Разделитель для CSV-вывода
+        "delimiter": ";"
+      },
+      {
+        "name": "PaymentOrder",
+        "tableIdentifier": "Платежное поручение",
+        "matchMode": "contains",
+        "searchScope": "firstRow",
+        "skipFirstRows": 0,
+        "skipLastRows": 0,
+        "includeHeader": true,
+        "delimiter": ";"
+      }
+    ]
+  },
+
+  // === Логирование ===
+  "logging": {
+    // Уровень: "debug" | "info" | "error"
+    "level": "info",
+
+    // Подпапка для логов (относительно папки с exe)
+    "folder": "logs"
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "imap": {
+    "server": "imap.yandex.ru",
+    "credentialTarget": "YandexMail",
+    "port": 0,
+    "sslOption": "Auto"
+  },
+  "processing": {
+    "markAsRead": true,
+    "daysToSearch": 7,
+    "maxEmailsPerRun": 0,
+    "outputFolder": "C:\\Output\\MailProcessor",
+    "useDateSubfolder": false
+  },
+  "attachments": {
+    "enabled": true,
+    "extensions": [ ".pdf", ".xls", ".xlsx" ],
+    "subfolder": "attachments",
+    "prefixWithUid": true
+  },
+  "tableParsing": {
+    "enabled": true,
+    "subfolder": "parsed",
+    "parseAllTablesIfNoMatch": false,
+    "rules": [
+      {
+        "name": "TransferDetails",
+        "tableIdentifier": "Сведения о переводе",
+        "matchMode": "contains",
+        "searchScope": "firstRow",
+        "skipFirstRows": 1,
+        "skipLastRows": 1,
+        "includeHeader": false,
+        "delimiter": ";"
+      },
+      {
+        "name": "PaymentOrder",
+        "tableIdentifier": "Платежное поручение",
+        "matchMode": "contains",
+        "searchScope": "firstRow",
+        "skipFirstRows": 0,
+        "skipLastRows": 0,
+        "includeHeader": true,
+        "delimiter": ";"
+      }
+    ]
+  },
+  "logging": {
+    "level": "info",
+    "folder": "logs"
+  }
+}
