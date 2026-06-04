@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration.cs" />
+    <Compile Include="EmailMetadata.cs" />
     <Compile Include="EmailProcessor.cs" />
     <Compile Include="EncodingHelper.cs" />
     <Compile Include="ImapConnector.cs" />

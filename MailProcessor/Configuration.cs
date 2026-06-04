@@ -16,8 +16,9 @@ public static class Configuration
     {
         public ImapConfig imap { get; set; } = new ImapConfig();
         public ProcessingConfig processing { get; set; } = new ProcessingConfig();
-        public AttachmentsConfig attachments { get; set; } = new AttachmentsConfig();
+        public List<AttachmentGroupConfig> attachments { get; set; } = new List<AttachmentGroupConfig>();
         public TableParsingConfig tableParsing { get; set; } = new TableParsingConfig();
+        public JsonExportConfig jsonExport { get; set; } = new JsonExportConfig();
         public LoggingConfig logging { get; set; } = new LoggingConfig();
     }
 
@@ -51,28 +52,65 @@ public static class Configuration
         /// <summary>Максимум писем за запуск (0 = без лимита).</summary>
         public int maxEmailsPerRun { get; set; } = 0;
 
-        /// <summary>Папка для сохранения результатов.</summary>
+        /// <summary>Папка для сохранения результатов (вложений, CSV).</summary>
         public string outputFolder { get; set; } = "";
 
         /// <summary>Создавать подпапку с датой запуска.</summary>
         public bool useDateSubfolder { get; set; } = false;
+
+        /// <summary>
+        /// Путь до папки для сохранения JSON-файлов.
+        /// Может быть абсолютным (C:\Output\JSON) или относительным (json) —
+        /// в последнем случае считается подпапкой внутри outputFolder.
+        /// Если пустое — используется outputFolder\json.
+        /// </summary>
+        public string jsonFolder { get; set; } = "";
+
+        /// <summary>
+        /// Сохранять JSON-метаданные для ВСЕХ писем (независимо от вложений и таблиц).
+        /// Если false — JSON сохраняется только для писем, подошедших под условия
+        /// saveMailToJson в группах вложений или tableParsing.saveMailToJson.
+        /// </summary>
+        public bool saveAllMailsToJson { get; set; } = false;
     }
 
-    // ────────────────────── Вложения ──────────────────────
+    // ────────────────────── Группы вложений ──────────────────────
 
-    public class AttachmentsConfig
+    /// <summary>
+    /// Конфигурация одной группы вложений.
+    /// attachments — это массив таких объектов, что позволяет разделять
+    /// вложения по расширениям в разные папки и независимо управлять
+    /// выгрузкой JSON для каждой группы.
+    /// </summary>
+    public class AttachmentGroupConfig
     {
-        /// <summary>Включено ли скачивание вложений.</summary>
+        /// <summary>
+        /// Человекочитаемое имя группы (используется в логах и в JSON-метаданных).
+        /// Например: "PDF Documents", "Excel Files".
+        /// </summary>
+        public string name { get; set; } = "Attachments";
+
+        /// <summary>Включена ли эта группа (если false — пропускается).</summary>
         public bool enabled { get; set; } = true;
 
         /// <summary>Расширения файлов для скачивания (например, ".pdf", ".xls").</summary>
-        public List<string> extensions { get; set; } = new List<string> { ".pdf", ".xls", ".xlsx" };
+        public List<string> extensions { get; set; } = new List<string>();
 
-        /// <summary>Подпапка для вложений внутри outputFolder.</summary>
+        /// <summary>
+        /// Подпапка для вложений этой группы внутри outputFolder.
+        /// Например: "attachments_pdf", "attachments_excel".
+        /// </summary>
         public string subfolder { get; set; } = "attachments";
 
         /// <summary>Добавлять ли UID письма к имени файла.</summary>
         public bool prefixWithUid { get; set; } = true;
+
+        /// <summary>
+        /// Сохранять ли JSON-метаданные для писем, у которых есть
+        /// вложения из этой группы.
+        /// Например: для PDF — true, для XLS/XLSX — false.
+        /// </summary>
+        public bool saveMailToJson { get; set; } = true;
     }
 
     // ────────────────────── Парсинг таблиц ──────────────────────
@@ -87,6 +125,12 @@ public static class Configuration
 
         /// <summary>Если ни одно правило не подошло — парсить ли все таблицы.</summary>
         public bool parseAllTablesIfNoMatch { get; set; } = false;
+
+        /// <summary>
+        /// Сохранять ли JSON-метаданные для писем, у которых была распарсена таблица.
+        /// Срабатывает только если таблица действительно найдена и сохранена в CSV.
+        /// </summary>
+        public bool saveMailToJson { get; set; } = false;
 
         /// <summary>Список правил парсинга таблиц.</summary>
         public List<TableParseRule> rules { get; set; } = new List<TableParseRule>();
@@ -119,6 +163,42 @@ public static class Configuration
         public string delimiter { get; set; } = ";";
     }
 
+    // ────────────────────── JSON-выгрузка ──────────────────────
+
+    /// <summary>
+    /// Настройки содержания JSON-метаданных.
+    /// Само решение «сохранять ли JSON» управляется через:
+    ///   - processing.saveAllMailsToJson
+    ///   - attachments[].saveMailToJson
+    ///   - tableParsing.saveMailToJson
+    /// </summary>
+    public class JsonExportConfig
+    {
+        /// <summary>
+        /// Фильтр по отправителю.
+        /// Пустой список = без фильтра (подходят все).
+        /// Непустой — отправитель (адрес или имя) должен содержать
+        /// хотя бы одну из строк (contains, без учёта регистра).
+        /// </summary>
+        public List<string> senderFilter { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Фильтр по теме письма.
+        /// Пустой список = без фильтра.
+        /// Непустой — тема должна содержать хотя бы одну из строк.
+        /// </summary>
+        public List<string> subjectFilter { get; set; } = new List<string>();
+
+        /// <summary>Включать ли текстовое тело письма в JSON (может быть большим).</summary>
+        public bool includeBodyText { get; set; } = true;
+
+        /// <summary>Включать ли HTML-тело письма в JSON (может быть очень большим).</summary>
+        public bool includeBodyHtml { get; set; } = false;
+
+        /// <summary>Создавать ли сводный _summary.json со всеми письмами.</summary>
+        public bool createSummary { get; set; } = true;
+    }
+
     // ────────────────────── Логирование ──────────────────────
 
     public class LoggingConfig
@@ -139,7 +219,7 @@ public static class Configuration
     public static AppConfig Load(string path)
     {
         if (!File.Exists(path))
-            throw new FileNotFoundException($"Конфиг не найден: {path}");
+            throw new FileNotFoundException("Конфиг не найден: " + path);
 
         string rawJson = File.ReadAllText(path, System.Text.Encoding.UTF8);
 
@@ -225,28 +305,44 @@ public static class Configuration
         if (string.IsNullOrWhiteSpace(config.processing.outputFolder))
             errors.Add("processing.outputFolder — обязательное поле (папка для результатов).");
 
-        if (config.attachments.enabled && config.attachments.extensions.Count == 0)
-            errors.Add("attachments.extensions — список расширений пуст, но скачивание включено.");
+        // Проверка групп вложений
+        if (config.attachments != null)
+        {
+            for (int i = 0; i < config.attachments.Count; i++)
+            {
+                var group = config.attachments[i];
+                string groupLabel = !string.IsNullOrWhiteSpace(group.name)
+                    ? group.name
+                    : "#" + i;
 
+                if (group.enabled && (group.extensions == null || group.extensions.Count == 0))
+                    errors.Add("attachments[" + groupLabel + "].extensions — список расширений пуст, но группа включена.");
+
+                if (string.IsNullOrWhiteSpace(group.subfolder))
+                    errors.Add("attachments[" + groupLabel + "].subfolder — не задана подпапка для вложений.");
+            }
+        }
+
+        // Проверка правил парсинга таблиц
         if (config.tableParsing.enabled)
         {
             foreach (var rule in config.tableParsing.rules)
             {
                 if (string.IsNullOrWhiteSpace(rule.tableIdentifier))
-                    errors.Add($"tableParsing.rules[{rule.name}]: tableIdentifier не задан.");
+                    errors.Add("tableParsing.rules[" + rule.name + "]: tableIdentifier не задан.");
 
-                string mode = rule.matchMode?.ToLowerInvariant() ?? "";
+                string mode = rule.matchMode != null ? rule.matchMode.ToLowerInvariant() : "";
                 if (mode != "contains" && mode != "startswith" && mode != "exact" && mode != "regex")
-                    errors.Add($"tableParsing.rules[{rule.name}]: matchMode должен быть contains/startsWith/exact/regex, получено: {rule.matchMode}");
+                    errors.Add("tableParsing.rules[" + rule.name + "]: matchMode должен быть contains/startsWith/exact/regex, получено: " + rule.matchMode);
 
-                string scope = rule.searchScope?.ToLowerInvariant() ?? "";
+                string scope = rule.searchScope != null ? rule.searchScope.ToLowerInvariant() : "";
                 if (scope != "firstrow" && scope != "anyrow")
-                    errors.Add($"tableParsing.rules[{rule.name}]: searchScope должен быть firstRow/anyRow, получено: {rule.searchScope}");
+                    errors.Add("tableParsing.rules[" + rule.name + "]: searchScope должен быть firstRow/anyRow, получено: " + rule.searchScope);
             }
         }
 
         if (errors.Count > 0)
-            throw new InvalidOperationException($"Ошибки в конфиге {path}:\n  — " + string.Join("\n  — ", errors));
+            throw new InvalidOperationException("Ошибки в конфиге " + path + ":\n  — " + string.Join("\n  — ", errors));
     }
 
     /// <summary>
@@ -259,5 +355,30 @@ public static class Configuration
         if (lower == "debug") return LogLevel.Debug;
         if (lower == "error") return LogLevel.Error;
         return LogLevel.Info;
+    }
+
+    /// <summary>
+    /// Вычисляет полный путь к папке JSON.
+    /// Если jsonFolder — абсолютный путь, использует его.
+    /// Если относительный — добавляет к outputFolder.
+    /// Если пустой — использует outputFolder\json.
+    /// </summary>
+    public static string ResolveJsonFolder(Configuration.AppConfig config)
+    {
+        string jsonFolder = config.processing.jsonFolder;
+
+        if (string.IsNullOrWhiteSpace(jsonFolder))
+            jsonFolder = "json";
+
+        // Проверяем, абсолютный ли путь
+        if (Path.IsPathRooted(jsonFolder))
+            return jsonFolder;
+
+        // Относительный путь — внутри outputFolder (с учётом useDateSubfolder)
+        string basePath = config.processing.outputFolder;
+        if (config.processing.useDateSubfolder)
+            basePath = Path.Combine(basePath, DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"));
+
+        return Path.Combine(basePath, jsonFolder);
     }
 }

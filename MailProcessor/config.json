@@ -2,7 +2,7 @@
   "imap": {
     "server": "imap.yandex.ru",
     "credentialTarget": "YandexMail",
-    "port": 0,
+    "port": 993,
     "sslOption": "Auto"
   },
   "processing": {
@@ -10,18 +10,33 @@
     "daysToSearch": 7,
     "maxEmailsPerRun": 0,
     "outputFolder": "C:\\Output\\MailProcessor",
-    "useDateSubfolder": false
+    "useDateSubfolder": false,
+    "jsonFolder": "json",
+    "saveAllMailsToJson": true
   },
-  "attachments": {
-    "enabled": true,
-    "extensions": [ ".pdf", ".xls", ".xlsx" ],
-    "subfolder": "attachments",
-    "prefixWithUid": true
-  },
+  "attachments": [
+    {
+      "name": "PDF Documents",
+      "enabled": true,
+      "extensions": [ ".pdf" ],
+      "subfolder": "attachments_pdf",
+      "prefixWithUid": true,
+      "saveMailToJson": true
+    },
+    {
+      "name": "Excel Files",
+      "enabled": true,
+      "extensions": [ ".xls", ".xlsx" ],
+      "subfolder": "attachments_excel",
+      "prefixWithUid": true,
+      "saveMailToJson": false
+    }
+  ],
   "tableParsing": {
     "enabled": true,
     "subfolder": "parsed",
     "parseAllTablesIfNoMatch": false,
+    "saveMailToJson": false,
     "rules": [
       {
         "name": "TransferDetails",
@@ -44,6 +59,13 @@
         "delimiter": ";"
       }
     ]
+  },
+  "jsonExport": {
+    "senderFilter": [],
+    "subjectFilter": [],
+    "includeBodyText": true,
+    "includeBodyHtml": false,
+    "createSummary": true
   },
   "logging": {
     "level": "info",
