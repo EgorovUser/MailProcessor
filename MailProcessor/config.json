@@ -3,16 +3,19 @@
     "server": "imap.yandex.ru",
     "credentialTarget": "YandexMail",
     "port": 993,
-    "sslOption": "Auto"
+    "sslOption": "Auto",
+    "folder": "INBOX"
   },
   "processing": {
     "markAsRead": true,
     "daysToSearch": 7,
     "maxEmailsPerRun": 0,
     "outputFolder": "C:\\Output\\MailProcessor",
-    "useDateSubfolder": false,
+    "useDateSubfolder": true,
+    "dateFormat": "yyyy-MM-dd_HH-mm-ss",
     "jsonFolder": "json",
-    "saveAllMailsToJson": true
+    "saveAllMailsToJson": false,
+    "dryRun": false
   },
   "attachments": [
     {
@@ -46,7 +49,8 @@
         "skipFirstRows": 1,
         "skipLastRows": 1,
         "includeHeader": false,
-        "delimiter": ";"
+        "delimiter": ";",
+        "outputFormat": "csv"
       },
       {
         "name": "PaymentOrder",
@@ -56,13 +60,28 @@
         "skipFirstRows": 0,
         "skipLastRows": 0,
         "includeHeader": true,
-        "delimiter": ";"
+        "delimiter": ";",
+        "outputFormat": "csv"
+      }
+    ]
+  },
+  "emailFilter": {
+    "enabled": true,
+    "rules": [
+      {
+        "name": "TestSubjects",
+        "sender": {
+          "patterns": [],
+          "matchMode": "contains"
+        },
+        "subject": {
+          "patterns": [ "[тТ]ест" ],
+          "matchMode": "regex"
+        }
       }
     ]
   },
   "jsonExport": {
-    "senderFilter": [],
-    "subjectFilter": [],
     "includeBodyText": true,
     "includeBodyHtml": false,
     "createSummary": true

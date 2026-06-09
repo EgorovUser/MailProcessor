@@ -84,15 +84,25 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration.cs" />
-    <Compile Include="EmailMetadata.cs" />
-    <Compile Include="EmailProcessor.cs" />
-    <Compile Include="EncodingHelper.cs" />
-    <Compile Include="ImapConnector.cs" />
-    <Compile Include="Logger.cs" />
-    <Compile Include="MailTableParser.cs" />
+    <Compile Include="Configuration\AppConfig.cs" />
+    <Compile Include="Configuration\ConfigLoader.cs" />
+    <Compile Include="Connectivity\ImapConnector.cs" />
+    <Compile Include="Models\AttachmentMeta.cs" />
+    <Compile Include="Models\EmailMetadata.cs" />
+    <Compile Include="Models\RunModels.cs" />
+    <Compile Include="Models\TableParseMeta.cs" />
+    <Compile Include="Parsing\MailTableParser.cs" />
+    <Compile Include="Parsing\TableExporter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\AttachmentSaver.cs" />
+    <Compile Include="Services\EmailFilterService.cs" />
+    <Compile Include="Services\EmailProcessor.cs" />
+    <Compile Include="Services\MetadataExporter.cs" />
+    <Compile Include="Utilities\AttachmentHelper.cs" />
+    <Compile Include="Utilities\EncodingHelper.cs" />
+    <Compile Include="Utilities\Logger.cs" />
+    <Compile Include="Utilities\TextMatcher.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

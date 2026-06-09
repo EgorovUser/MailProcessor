@@ -1,33 +1,32 @@
 ﻿using CredentialManagement;
 using MailKit.Net.Imap;
+using MailProcessor.Configuration;
+using MailProcessor.Connectivity;
+using MailProcessor.Services;
+using MailProcessor.Utilities;
 using System;
 using System.IO;
 
 /// <summary>
 /// MailProcessor — анализ почтового ящика через IMAP.
-/// Скачивает вложения заданных расширений, при отсутствии — парсит HTML-таблицы.
-/// Вся конфигурация — в config.json рядом с exe.
 /// </summary>
 class Program
 {
     static int Main(string[] args)
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
-        EncodingHelper.RegisterEncodings();
 
-        // Путь к конфигу — всегда рядом с exe
         string exeDir = Directory.GetCurrentDirectory();
         string configPath = Path.Combine(exeDir, "config.json");
 
         // ── Загрузка конфига ──
-        Configuration.AppConfig config;
+        AppConfig config;
         try
         {
-            config = Configuration.Load(configPath);
+            config = ConfigLoader.Load(configPath);
         }
         catch (Exception ex)
         {
-            // Логгер ещё не инициализирован — пишем в консоль и в дефолтный лог
             string fallbackLogDir = Path.Combine(exeDir, "logs");
             Directory.CreateDirectory(fallbackLogDir);
             string fallbackLog = Path.Combine(fallbackLogDir, DateTime.Now.ToString("dd_MM_yyyy_HH_mm") + ".txt");
@@ -37,7 +36,7 @@ class Program
         }
 
         // ── Инициализация логгера ──
-        LogLevel logLevel = Configuration.ParseLogLevel(config.logging.level);
+        LogLevel logLevel = ConfigLoader.ParseLogLevel(config.logging.level);
         string logDir = Path.Combine(exeDir, config.logging.folder);
         string logPath = Path.Combine(logDir, DateTime.Now.ToString("dd_MM_yyyy_HH_mm") + ".txt");
         Logger.Initialize(logPath, logLevel);
@@ -45,6 +44,11 @@ class Program
         Logger.Info("══════════════════════════════════════════════");
         Logger.Info("MailProcessor запущен. LogLevel: {0}", logLevel);
         Logger.Info("Конфиг: {0}", configPath);
+
+        if (config.processing.dryRun)
+            Logger.Info("═══ DRY RUN — файлы НЕ сохраняются ═══");
+
+        Logger.Info("IMAP папка: {0}", config.imap.folder);
 
         // ── Получение учётных данных ──
         string username;
@@ -68,16 +72,19 @@ class Program
         }
 
         // ── Создание папки вывода ──
-        try
+        if (!config.processing.dryRun)
         {
-            Directory.CreateDirectory(config.processing.outputFolder);
-            Logger.Info("Папка вывода: {0}", config.processing.outputFolder);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error("Не удалось создать папку вывода '{0}': {1}",
-                config.processing.outputFolder, ex.Message);
-            return 1;
+            try
+            {
+                Directory.CreateDirectory(config.processing.outputFolder);
+                Logger.Info("Папка вывода: {0}", config.processing.outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("Не удалось создать папку вывода '{0}': {1}",
+                    config.processing.outputFolder, ex.Message);
+                return 1;
+            }
         }
 
         // ── Подключение к IMAP и обработка ──
@@ -125,9 +132,6 @@ class Program
         return 0;
     }
 
-    /// <summary>
-    /// Получение логина и пароля из Windows Credential Manager.
-    /// </summary>
     private static Tuple<string, string> GetCredentials(string target)
     {
         Logger.Debug("Загрузка credentials для target='{0}'", target);
